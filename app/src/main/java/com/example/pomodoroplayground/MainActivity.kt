@@ -20,16 +20,24 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pomodoroplayground.screens.PomodoroScreen
 import com.example.pomodoroplayground.screens.ProfileScreen
 import com.example.pomodoroplayground.screens.StatsScreen
+import com.example.pomodoroplayground.timer.TimerScreen
 import com.example.pomodoroplayground.ui.theme.PomodoroPlaygroundTheme
+import androidx.activity.viewModels
+import com.example.pomodoroplayground.timer.TimerState
+import com.example.pomodoroplayground.timer.TimerViewModel
+
 
 class MainActivity : ComponentActivity() {
+
+    val viewModel by viewModels<TimerViewModel>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             PomodoroPlaygroundTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    PomodoroApp()
+                    PomodoroApp(timerViewModel = viewModel)
                 }
             }
         }
@@ -37,7 +45,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PomodoroApp() {
+fun PomodoroApp(timerViewModel: TimerViewModel) {
 
     val navController = rememberNavController()
     val backStackEntry = navController.currentBackStackEntryAsState()
@@ -59,13 +67,18 @@ fun PomodoroApp() {
             )
         }
     ) { innerPadding ->
-        PomodoroNavHost(navController = navController, Modifier.padding(innerPadding))
+        PomodoroNavHost(
+            navController = navController,
+            timerViewModel = timerViewModel,
+            Modifier.padding(innerPadding)
+        )
     }
 }
 
 @Composable
 fun PomodoroNavHost(
     navController: NavHostController,
+    timerViewModel: TimerViewModel,
     modifier: Modifier = Modifier
 ) {
 
@@ -74,7 +87,15 @@ fun PomodoroNavHost(
         startDestination = PomodoroScreen.Timer.route,
         modifier = modifier
     ) {
-        composable(PomodoroScreen.Timer.route) { TimerScreen(navController) }
+        composable(PomodoroScreen.Timer.route) {
+            TimerScreen(
+                timerViewModel.timerState.value,
+                onTimerStartClick = timerViewModel::startTimer,
+                onTimerPauseClick = timerViewModel::pauseTimer,
+                onTimerContinueClick = timerViewModel::continueTimer,
+                onTimerStopClick = timerViewModel::stopTimer
+            )
+        }
         composable(PomodoroScreen.Stats.route) { StatsScreen(navController) }
         composable(PomodoroScreen.Profile.route) { ProfileScreen(navController) }
     }
@@ -118,6 +139,6 @@ fun PomodoroBottomNavBar(
 @Composable
 fun DefaultPreview() {
     PomodoroPlaygroundTheme {
-        PomodoroApp()
+        PomodoroApp(TimerViewModel())
     }
 }
